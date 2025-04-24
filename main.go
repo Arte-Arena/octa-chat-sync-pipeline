@@ -1,75 +1,64 @@
 package main
 
 import (
-	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"strings"
+	"script/utils"
 )
 
-func loadEnv(filename string) error {
-	file, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		// Ignora linhas vazias e comentários
-		if len(line) == 0 || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		// Divide a linha em chave e valor
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
-			continue
-		}
-
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-
-		// Remove aspas se existirem
-		value = strings.Trim(value, `"'`)
-
-		// Define a variável de ambiente
-		os.Setenv(key, value)
-	}
-
-	return scanner.Err()
+type Chat struct {
+	ID string `json:"id"`
 }
 
-func main() {
-	// Carrega variáveis do arquivo .env
-	if err := loadEnv(".env"); err != nil {
-		log.Printf("Warning: Error loading .env file: %v", err)
-	}
-
-	url := "https://artearena.api004.octadesk.services/chat?page=1&limit=100&sort[direction]=desc&sort[property]=createdAt"
-
+func fetchChats(url, apiKey string) ([]Chat, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Fatalf("Error creating request: %v", err)
+		return nil, fmt.Errorf("creating request: %w", err)
 	}
-
 	req.Header.Add("accept", "application/json")
-	req.Header.Add("X-API-KEY", os.Getenv("X_API_KEY_OCTA"))
+	req.Header.Add("X-API-KEY", apiKey)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Fatalf("Error making request: %v", err)
+		return nil, fmt.Errorf("making HTTP request: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(res.Body)
+		return nil, fmt.Errorf("unexpected status %d: %s", res.StatusCode, string(body))
 	}
 
-	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Fatalf("Error reading response body: %v", err)
+		return nil, fmt.Errorf("reading response body: %w", err)
 	}
 
-	fmt.Println(string(body))
+	var chats []Chat
+	if err := json.Unmarshal(body, &chats); err != nil {
+		return nil, fmt.Errorf("unmarshalling JSON: %w", err)
+	}
+
+	return chats, nil
+}
+
+func main() {
+	utils.LoadEnvVariables()
+
+	url := "https://artearena.api004.octadesk.services/chat?page=1&limit=100&sort[direction]=desc&sort[property]=createdAt"
+	apiKey := os.Getenv("X_API_KEY_OCTA")
+
+	chats, err := fetchChats(url, apiKey)
+	if err != nil {
+		log.Fatalf("Error fetching chats: %v", err)
+	}
+
+	fmt.Printf("IDs carregados (%d):\n", len(chats))
+	for _, chat := range chats {
+		fmt.Println("-", chat.ID)
+	}
 }
