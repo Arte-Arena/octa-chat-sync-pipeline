@@ -13,13 +13,14 @@ const (
 	ENV_PORT        = "PORT"
 	ENV_MONGODB_URI = "MONGODB_URI"
 	ENV             = "ENV"
+	ADMIN_KEY       = "ADMIN_KEY"
 	X_API_KEY_OCTA  = "X_API_KEY_OCTA"
 
 	ENV_DEVELOPMENT = "development"
 	ENV_RELEASE     = "production"
 )
 
-var allowedKeys = []string{ENV_PORT, ENV_MONGODB_URI, ENV, X_API_KEY_OCTA}
+var allowedKeys = []string{ENV_PORT, ENV_MONGODB_URI, ENV, X_API_KEY_OCTA, ADMIN_KEY}
 
 var allowedEnvValues = []string{ENV_DEVELOPMENT, ENV_RELEASE}
 
