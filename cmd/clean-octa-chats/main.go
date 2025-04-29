@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Arte-Arena/octa-chat-sync-pipeline/utils"
+	"script/utils"
 )
 
 // Chat representa um chat retornado pela API

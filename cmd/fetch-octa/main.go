@@ -142,13 +142,21 @@ func main() {
 		count++
 	}
 
+	// Determine the environment and set the export URL accordingly
+	env := os.Getenv("ENV")
+	var exportURL string
+
+	if env == "production" {
+		exportURL = "https://api.my.spacearena.net/v1/admin/octa/chat"
+	} else {
+		exportURL = "http://localhost:8080/v1/admin/octa/chat"
+	}
+
 	// 4) Se não imprimir imediatamente, exibe lista completa ao final
 	if !printImmediate {
 		for _, mi := range messageList {
 			fmt.Printf("(%s, %s)\n", mi.ChatID, mi.Time)
 
-			// 5) Faz a requisição para o endpoint de exportação
-			exportURL := "http://localhost:8080/v1/admin/octa/chat"
 			exportReq, err := http.NewRequest("PUT", exportURL, nil)
 			if err != nil {
 				log.Fatalf("Error creating export request: %v", err)
